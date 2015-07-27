@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import re, sys, json, csv, socket, time, datetime, os, httplib, glob, errno, gzip
+import re, sys, json, csv, socket, time, datetime, os, httplib, glob, errno, gzip, sqlite3
 from urlparse import urlparse
 from dateutil import parser
 from collections import OrderedDict
@@ -8,6 +8,7 @@ from collections import OrderedDict
 with open('config.json') as data_file: #loads configuration
     config = json.load(data_file)
 log_dir = config["access_log_location"]
+filters = config["whitelist_extensions"]
 
 #@profile
 def get_user_story():
@@ -58,8 +59,8 @@ def apachetime(s):
     '''
     method that parses 10 times faster dates using slicing instead of regexs
     '''
-    return datetime.datetime(int(s[7:11]), month_map[s[3:6]], int(s[0:2]), \
-         int(s[12:14]), int(s[15:17]), int(s[18:20]))
+    return [(int(s[7:11]), month_map[s[3:6]], int(s[0:2]), \
+         int(s[12:14]), int(s[15:17]), int(s[18:20]))]
 
 #@profile
 def get_requests():
@@ -70,11 +71,22 @@ def get_requests():
             '(\d+.\d+.\d+.\d+)\s-\s-\s' #IP address: 0
             '\[(.+)\]\s' #datetime: 1
             '"GET\s(.+)\s\w+/.+"\s' #requested file: 2
-            '(\d+)\s' #status: 3
-            '(\d+)\s' #bandwidth: 4
+            '(\d+)\s' #status protocollo: 3
+            '(\d+)\s' #bandwidth dimensione: 4
             '"(.+)"\s' #referrer: 5
             '"(.+)"' #user agent: 6
         )
+    #if not os.path.isfile('macro.db'):
+    connection = sqlite3.connect('macro.db')
+    cursor = connection.cursor()
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS get 
+        (anno integer, mese integer, giorno integer,
+         ora integer, minuti integer, secondi integer,
+         fuso text, ip text, pagina_richiesta text, protocollo text,
+         dimensione integer, refferrer text, user_agent text, browser text)''')
+    connection.commit()
+
     log_gz_number = 1
     path = log_dir.rsplit('/',1)[0] + "/access.log.*.gz"
     print path
@@ -85,20 +97,24 @@ def get_requests():
         try:
             f = gzip.open(name, 'r') 
             for line in f:
-                #print line
-                '''compiled_line = find(pat, line, None)
+                compiled_line = find(pat, line, None)
                 if compiled_line:
                     compiled_line = compiled_line[0] # convert our [("","","")] to ("","","")
                     if ( any(x in compiled_line[2] for x in filters) or (compiled_line[2].endswith('/')) or (('.') not in compiled_line[2]) ):
                         request_time = apachetime(compiled_line[1])
-                        #request_time_ = time.strptime(compiled_line[1][:-6], '%d/%b/%Y:%H:%M:%S')
-                        if ( not any(black in compiled_line[2] for black in black_folders ) ) and ( start_point <= request_time <= end_point ):
-                            requests.append(compiled_line)
-                        if request_time > end_point:
-                            return requests'''
+                        #if ( not any(black in compiled_line[2] for black in black_folders ) ) and ( start_point <= request_time <= end_point ):
+                        #print line
+                        request_time = request_time[0] #tengo solamente la tupla
+                        cursor.execute('''INSERT INTO get(anno, mese, giorno, ora, minuti, secondi, fuso, ip, pagina_richiesta, protocollo, dimensione, refferrer, user_agent, browser)
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (request_time[0], request_time[1], request_time[2], \
+                                request_time[3], request_time[4], request_time[5], \
+                                "0", compiled_line[0], compiled_line[2], compiled_line[3], compiled_line[4], compiled_line[5], compiled_line[6], "0" ))
+                        print "riga aggiunta"
+                        connection.commit()
         except IOError as exc:
             if exc.errno != errno.EISDIR:
                 raise
+    connection.close()
     
     
 

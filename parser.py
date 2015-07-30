@@ -4,16 +4,46 @@ import re, sys, json, csv, socket, time, datetime, os, httplib, glob, errno, gzi
 from urlparse import urlparse
 from dateutil import parser
 from collections import OrderedDict
+'''
+Costanti dei percorsi assoluti dei file, mi permette di eseguire lo script da tutte le directory
+'''
+CURRENT_DIR = os.path.dirname(__file__) 
+CONFIG_FILE = os.path.join(CURRENT_DIR, "config.json")
+LOG_FILE = os.path.join(CURRENT_DIR, "macro.log")
+DB_FILE = os.path.join(CURRENT_DIR, "macro.db")
+'''
+Regex per individuare le linee utili di un access log
+'''
+pat_get = (r'' #individua tutti i GET
+            '(\d+.\d+.\d+.\d+)\s-\s-\s' #IP address: 0
+            '\[(.+)\]\s' #datetime: 1
+            '"GET\s(.+)\s\w+/.+"\s' #requested file: 2
+            '(\d+)\s' #status protocollo: 3
+            '(\d+)\s' #bandwidth dimensione: 4
+            '"(.+)"\s' #referrer: 5
+            '"(.+)"' #user agent: 6
+        )
 
-with open('config.json') as data_file: #loads configuration
+pat_post = (r'' #individua tutti i POST
+            '(\d+.\d+.\d+.\d+)\s-\s-\s' #IP address: 0
+            '\[(.+)\]\s' #datetime: 1
+            '"POST\s(.+)\s\w+/.+"\s' #requested file: 2
+            '(\d+)\s' #status protocollo: 3
+            '(\d+)\s' #bandwidth dimensione: 4
+            '"(.+)"\s' #referrer: 5
+            '"(.+)"' #user agent: 6
+        )
+
+
+'''
+leggiamo le variabili settate dall'utente in config.json
+'''
+with open(CONFIG_FILE, 'r') as data_file: #loads configuration
     config = json.load(data_file)
-log_dir = config["access_log_location"]
-filters = config["whitelist_extensions"]
+    print "Sto eseguendo.."
+log_dir = config["access_log_location"] #path(percorso) dell'access log
+filters = config["whitelist_extensions"] #tutte le pagine da loggare (php, html, asp....)
 
-#@profile
-def get_user_story():
-    requests = get_requests() #list with all lines of the access log
-        
 def check_bot(request):
     '''
     method that checks if a UA string could be a spider
@@ -62,59 +92,73 @@ def apachetime(s):
     return [(int(s[7:11]), month_map[s[3:6]], int(s[0:2]), \
          int(s[12:14]), int(s[15:17]), int(s[18:20]))]
 
+def leggi_log_zippati(nome_log, connection, cursor, log_file):
+    try:
+        f = gzip.open(nome_log, 'r') 
+        for line in f: # per ogni linea del file
+            compiled_line = find(pat_get, line, None) #controlla se soddisfa la regex di nome "pat"
+            if compiled_line:
+                compiled_line = compiled_line[0] # converte la lista di una tupla [("","","")] nella singola tupla ("","","")
+                if ( any(x in compiled_line[2] for x in filters) or (compiled_line[2].endswith('/')) or (('.') not in compiled_line[2]) ): #controllo se solo file html e php oppure che finisca con "/" opure senza estensione(non prende css...)
+                    request_time = apachetime(compiled_line[1])
+                    #if ( not any(black in compiled_line[2] for black in black_folders ) ) and ( start_point <= request_time <= end_point ):
+                    #print line
+                    request_time = request_time[0] #tengo solamente la tupla
+                    cursor.execute('''INSERT INTO get(anno, mese, giorno, ora, minuti, secondi, fuso, ip, pagina_richiesta, protocollo, dimensione, refferrer, user_agent, browser)
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (request_time[0], request_time[1], request_time[2], \
+                            request_time[3], request_time[4], request_time[5], \
+                            "0", compiled_line[0], compiled_line[2], compiled_line[3], compiled_line[4], compiled_line[5], compiled_line[6], "0" ))
+                    connection.commit()
+        log_file.write("Ho letto con successo " + nome_log)
+    except IOError as exc:
+        log_file.write("Non ho letto con successo " + nome_log)
+        if exc.errno != errno.EISDIR:
+            raise
+
+def leggi_vecchi_gz():
+    '''
+    Funzione che legge e inserisce in un db tutti i file .gz presenti. I .gz sono file di log compressi dei giorni/mesi precedenti.
+    Crea inoltre un suo file di testo dove tiene traccia di tutti i file .gz letti.
+    '''
+    if not os.path.isfile(DB_FILE):
+        connection = sqlite3.connect(DB_FILE) #crea il database
+        cursor = connection.cursor() #cursore del database
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS get 
+            (anno integer, mese integer, giorno integer,
+             ora integer, minuti integer, secondi integer,
+             fuso text, ip text, pagina_richiesta text, protocollo text,
+             dimensione integer, refferrer text, user_agent text, browser text)''')
+        connection.commit()
+
+        if not os.path.isfile(LOG_FILE):
+            with open(LOG_FILE, 'w') as log_file: # w, crea e scrive
+                log_file.write("File di log creato")
+
+        path = log_dir.rsplit('/',1)[0] + "/access.log.*.gz" #e' una stringa che identifica tutti i file .gz
+        files = glob.glob(path) #crea un array di tutti i file .gz presenti
+        with open(LOG_FILE, 'a') as log_file: # a, appende a file gia' esistente
+
+            for name in files: #per ogni file .gz
+                leggi_log_zippati(name, connection, cursor, log_file)
+               
+            connection.close()
+
+def leggi_piu_recente_gz():
+    pass
+
+
 #@profile
-def get_requests():
+def start_parser():
     '''
-    method that creates a list containing all requests done on a site
+    Se e' la prima volta analizza tutti i log gz precedenti.
+    Se non e' la prima volta lo script viene eseguito dopo una log rotation quindi e' possibile leggere l'ultimo log in .gz
     '''
-    pat = (r''
-            '(\d+.\d+.\d+.\d+)\s-\s-\s' #IP address: 0
-            '\[(.+)\]\s' #datetime: 1
-            '"GET\s(.+)\s\w+/.+"\s' #requested file: 2
-            '(\d+)\s' #status protocollo: 3
-            '(\d+)\s' #bandwidth dimensione: 4
-            '"(.+)"\s' #referrer: 5
-            '"(.+)"' #user agent: 6
-        )
-    #if not os.path.isfile('macro.db'):
-    connection = sqlite3.connect('macro.db')
-    cursor = connection.cursor()
+    if not os.path.isfile(LOG_FILE): #questo viene eseguito solamente al primo avvio
+        leggi_vecchi_gz()
+    else:
+        leggi_piu_recente_gz()
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS get 
-        (anno integer, mese integer, giorno integer,
-         ora integer, minuti integer, secondi integer,
-         fuso text, ip text, pagina_richiesta text, protocollo text,
-         dimensione integer, refferrer text, user_agent text, browser text)''')
-    connection.commit()
-
-    log_gz_number = 1
-    path = log_dir.rsplit('/',1)[0] + "/access.log.*.gz"
-    print path
-    files = glob.glob(path)
-    print files
-    for name in files:
-        print name
-        try:
-            f = gzip.open(name, 'r') 
-            for line in f:
-                compiled_line = find(pat, line, None)
-                if compiled_line:
-                    compiled_line = compiled_line[0] # convert our [("","","")] to ("","","")
-                    if ( any(x in compiled_line[2] for x in filters) or (compiled_line[2].endswith('/')) or (('.') not in compiled_line[2]) ):
-                        request_time = apachetime(compiled_line[1])
-                        #if ( not any(black in compiled_line[2] for black in black_folders ) ) and ( start_point <= request_time <= end_point ):
-                        #print line
-                        request_time = request_time[0] #tengo solamente la tupla
-                        cursor.execute('''INSERT INTO get(anno, mese, giorno, ora, minuti, secondi, fuso, ip, pagina_richiesta, protocollo, dimensione, refferrer, user_agent, browser)
-                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (request_time[0], request_time[1], request_time[2], \
-                                request_time[3], request_time[4], request_time[5], \
-                                "0", compiled_line[0], compiled_line[2], compiled_line[3], compiled_line[4], compiled_line[5], compiled_line[6], "0" ))
-                        print "riga aggiunta"
-                        connection.commit()
-        except IOError as exc:
-            if exc.errno != errno.EISDIR:
-                raise
-    connection.close()
     
     
 
@@ -172,7 +216,7 @@ def file_occur(entry):
     return d
 
 if __name__ == '__main__':
-    #return dict of entry and total requests
-    ret = get_user_story()
+    #avvia la funzione per eseguire l'intero file
+    start_parser()
     
 

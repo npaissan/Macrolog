@@ -2,7 +2,6 @@
 
 import re, sys, json, csv, socket, time, datetime, os, httplib, glob, errno, gzip, sqlite3
 from urlparse import urlparse
-from dateutil import parser
 from collections import OrderedDict
 '''
 Costanti dei percorsi assoluti dei file, mi permette di eseguire lo script da tutte le directory

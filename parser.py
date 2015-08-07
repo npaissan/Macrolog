@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-import re, sys, json, csv, socket, time, datetime, os, httplib, glob, errno, gzip, sqlite3
-from urlparse import urlparse
-from collections import OrderedDict
+import re, sys, json, time, datetime, os, glob, errno, gzip, sqlite3
 '''
 Costanti dei percorsi assoluti dei file, mi permette di eseguire lo script da tutte le directory
 '''
@@ -42,6 +40,7 @@ with open(CONFIG_FILE, 'r') as data_file: #loads configuration
     print "Sto eseguendo.."
 log_dir = config["access_log_location"] #path(percorso) dell'access log
 filters = config["whitelist_extensions"] #tutte le pagine da loggare (php, html, asp....)
+profondita_cartella = config["folder_level"] #mi restituisce la profondita' della cartella che l'utente desidera analizzare.
 
 def check_bot(request):
     '''
@@ -65,18 +64,18 @@ def search_in_list(name, _list):
 
 def get_folder(url):
     '''
-    method that cut an URL on a specific folder depth
     if depth==1 get_folder("/atleta/profilo/index.php")==/atleta
+    metodo che estrae da un URL la cartella nella quale la pagina si trova.
     '''
     token = url.split("/")
     folder = ""
     #print token
     if "." in token[-1]:
         token[-1] = ''
-    if (len(token) <= depth) and (depth>0):
+    if (len(token) <= profondita_cartella) and (profondita_cartella>0):
         current_depth = len(token) - 1
     else:
-        current_depth = depth
+        current_depth = profondita_cartella
     for count in range(1,current_depth+1):
         folder += "/" + token[count]
     return folder
@@ -91,9 +90,14 @@ def apachetime(s):
     return [(int(s[7:11]), month_map[s[3:6]], int(s[0:2]), \
          int(s[12:14]), int(s[15:17]), int(s[18:20]))]
 
-def leggi_log_zippati(nome_log, connection, cursor, log_file):
+def leggi_log(nome_log, connection, cursor, log_file, modo):
     try:
-        f = gzip.open(nome_log, 'r') 
+        if modo == "gzip":
+            f = gzip.open(nome_log, 'r')
+        elif modo == "text":
+            f = open(nome_log, 'r')
+        ip_precedente = "0.0.0.0"
+        pagina_richiesta_precedentemente = "0"
         for line in f: # per ogni linea del file
             compiled_line = find(pat_get, line, None) #controlla se soddisfa la regex di nome "pat"
             if compiled_line:
@@ -103,16 +107,17 @@ def leggi_log_zippati(nome_log, connection, cursor, log_file):
                     #if ( not any(black in compiled_line[2] for black in black_folders ) ) and ( start_point <= request_time <= end_point ):
                     #print line
                     request_time = request_time[0] #tengo solamente la tupla
-                    cursor.execute('''INSERT INTO get(anno, mese, giorno, ora, minuti, secondi, fuso, ip, pagina_richiesta, protocollo, dimensione, refferrer, user_agent, browser)
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (request_time[0], request_time[1], request_time[2], \
-                            request_time[3], request_time[4], request_time[5], \
-                            "0", compiled_line[0], compiled_line[2], compiled_line[3], compiled_line[4], compiled_line[5], compiled_line[6], "0" ))
-                    connection.commit()
-        log_file.write("Ho letto con successo " + nome_log)
-    except IOError as exc:
-        log_file.write("Non ho letto con successo " + nome_log)
-        if exc.errno != errno.EISDIR:
-            raise
+                    if not (ip_precedente == compiled_line[0] and pagina_richiesta_precedentemente == compiled_line[2][:-1]): #controllo per capire per esempio se ho /atletica.me e /atletica.me/ consecutivamente, sono la stessa pagina non effettuo l'inserimento
+                        cursor.execute('''INSERT INTO get(anno, mese, giorno, ora, minuti, secondi, fuso, ip, pagina_richiesta, protocollo, dimensione, refferrer, user_agent, browser, cartella_pagina)
+                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (request_time[0], request_time[1], request_time[2], \
+                                request_time[3], request_time[4], request_time[5], \
+                                "0", compiled_line[0], compiled_line[2], compiled_line[3], compiled_line[4], compiled_line[5], compiled_line[6], "0", get_folder(compiled_line[2]) ))
+                        connection.commit()
+                    ip_precedente = compiled_line[0]
+                    pagina_richiesta_precedentemente = compiled_line[2]
+        log_file.write(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') + " Ho letto con successo " + nome_log + "\n")
+    except:
+        log_file.write(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') + " Non ho letto con successo " + nome_log + "\n")
 
 def leggi_vecchi_gz():
     '''
@@ -120,31 +125,46 @@ def leggi_vecchi_gz():
     Crea inoltre un suo file di testo dove tiene traccia di tutti i file .gz letti.
     '''
     if not os.path.isfile(DB_FILE):
-        connection = sqlite3.connect(DB_FILE) #crea il database
+        connection = sqlite3.connect(DB_FILE) #si connette e se non esiste crea un database
         cursor = connection.cursor() #cursore del database
 
         cursor.execute('''CREATE TABLE IF NOT EXISTS get 
             (anno integer, mese integer, giorno integer,
              ora integer, minuti integer, secondi integer,
              fuso text, ip text, pagina_richiesta text, protocollo text,
-             dimensione integer, refferrer text, user_agent text, browser text)''')
+             dimensione integer, refferrer text, user_agent text, browser text, cartella_pagina text)''')
         connection.commit()
 
         if not os.path.isfile(LOG_FILE):
             with open(LOG_FILE, 'w') as log_file: # w, crea e scrive
-                log_file.write("File di log creato")
+                log_file.write(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') + " File di log creato\n")
 
         path = log_dir.rsplit('/',1)[0] + "/access.log.*.gz" #e' una stringa che identifica tutti i file .gz
         files = glob.glob(path) #crea un array di tutti i file .gz presenti
         with open(LOG_FILE, 'a') as log_file: # a, appende a file gia' esistente
 
             for name in files: #per ogni file .gz
-                leggi_log_zippati(name, connection, cursor, log_file)
+                leggi_log(name, connection, cursor, log_file, "gzip")
                
             connection.close()
 
 def leggi_piu_recente_gz():
-    pass
+    '''
+    Funzione che legge e inserisce in un db l'access log piu' recente appena ruotato.
+    '''
+    try:
+        if os.path.isfile(DB_FILE):
+            connection = sqlite3.connect(DB_FILE) #connesione al database
+            cursor = connection.cursor() #cursore del database
+
+            path = log_dir.rsplit('/',1)[0] + "/access.log.1" #legge l'ultimo log ruotato
+            files = glob.glob(path) #crea un array di tutti i file .gz presenti
+            print files[0]
+            with open(LOG_FILE, 'a') as log_file:
+                leggi_log(files[0], connection, cursor, log_file, "text")
+                connection.close()
+    except: 
+        print "Non sono riuscito a leggere il file: ", sys.exc_info()[0]
 
 
 #@profile
@@ -217,5 +237,3 @@ def file_occur(entry):
 if __name__ == '__main__':
     #avvia la funzione per eseguire l'intero file
     start_parser()
-    
-

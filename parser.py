@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import re, sys, json, time, datetime, os, glob, errno, gzip, sqlite3
+import re, sys, json, time, datetime, os, glob, errno, gzip, sqlite3, csv
 '''
 Costanti dei percorsi assoluti dei file, mi permette di eseguire lo script da tutte le directory
 '''
@@ -8,6 +8,11 @@ CURRENT_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.join(CURRENT_DIR, "config.json")
 LOG_FILE = os.path.join(CURRENT_DIR, "macro.log")
 DB_FILE = os.path.join(CURRENT_DIR, "macro.db")
+CSV_VISITATORI_FILE = os.path.abspath(".") + "/public/csv"
+if not os.path.exists(CSV_VISITATORI_FILE):
+    os.makedirs(CSV_VISITATORI_FILE)
+CSV_VISITATORI_FILE = CSV_VISITATORI_FILE + "/conteggio_visitatori.csv"
+print CSV_VISITATORI_FILE
 '''
 Regex per individuare le linee utili di un access log
 '''
@@ -37,14 +42,15 @@ leggiamo le variabili settate dall'utente in config.json
 '''
 with open(CONFIG_FILE, 'r') as data_file: #loads configuration
     config = json.load(data_file)
-    print "Sto eseguendo.."
+    print "Sto leggendo il file di configurazione..."
 log_dir = config["access_log_location"] #path(percorso) dell'access log
 filters = config["whitelist_extensions"] #tutte le pagine da loggare (php, html, asp....)
 profondita_cartella = config["folder_level"] #mi restituisce la profondita' della cartella che l'utente desidera analizzare.
+dove_salvare_html = config["public_html"] #cartella dove l'utente vuole pubblicare i grafici.
 
 def check_bot(request):
     '''
-    method that checks if a UA string could be a spider
+    funzione che controlla se un user agent puo' essere di un bot come google o bing o crawler/spider...
     '''
     if("robots.txt" in request[0]):
         return True
@@ -124,6 +130,7 @@ def leggi_vecchi_gz():
     Funzione che legge e inserisce in un db tutti i file .gz presenti. I .gz sono file di log compressi dei giorni/mesi precedenti.
     Crea inoltre un suo file di testo dove tiene traccia di tutti i file .gz letti.
     '''
+    print "Sto leggendo i vecchi file di log..."
     if not os.path.isfile(DB_FILE):
         connection = sqlite3.connect(DB_FILE) #si connette e se non esiste crea un database
         cursor = connection.cursor() #cursore del database
@@ -159,12 +166,61 @@ def leggi_piu_recente_gz():
 
             path = log_dir.rsplit('/',1)[0] + "/access.log.1" #legge l'ultimo log ruotato
             files = glob.glob(path) #crea un array di tutti i file .gz presenti
-            print files[0]
             with open(LOG_FILE, 'a') as log_file:
                 leggi_log(files[0], connection, cursor, log_file, "text")
                 connection.close()
     except: 
         print "Non sono riuscito a leggere il file: ", sys.exc_info()[0]
+
+def conta_ip_giornalieri_csv():
+    '''
+    funzione che legge dal database (tabella get) il numero di visitatori giornalieri tramite ip e li salva in un file .csv per velocita' di lettura
+    '''
+    try:
+        print "Sto creando un file csv"
+        if not os.path.exists(dove_salvare_html + "/csv"):
+                os.makedirs(dove_salvare_html + "/csv")
+        if os.path.isfile(DB_FILE):
+            connection = sqlite3.connect(DB_FILE) #connesione al database
+            cursor = connection.cursor() #cursore del database
+            cursor.execute("SELECT anno, mese, giorno, COUNT (DISTINCT ip) AS visitatori FROM get \
+                GROUP BY anno, mese, giorno")
+            with open(CSV_VISITATORI_FILE, "wb") as csv_file:
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerow([i[0] for i in cursor.description]) #scrive solo intestazioni
+                csv_writer.writerows(cursor) #scrive il resto del file
+        with open(LOG_FILE, 'a') as log_file:
+            log_file.write(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') + " Ho creato un file csv che mostra i visitatori totali del giorno")
+
+    except Exception, e:
+        print "Non sono riuscito a creare il file CSV: ", sys.exc_info()[0]
+        with open(LOG_FILE, 'a') as log_file:
+            log_file.write(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') + " Non ho creato un file csv che mostra i visitatori totali del giorno")
+        raise e
+
+def aggiorna_ip_giornalieri_csv():
+    '''
+    funzione che legge e aggiorna dal database (tabella get) il numero di visitatori giornalieri tramite ip e li salva in un file .csv per velocita' di lettura
+    '''
+    try:
+        if os.path.isfile(CSV_VISITATORI_FILE):
+            if os.path.isfile(DB_FILE):
+                connection = sqlite3.connect(DB_FILE) #connesione al database
+                cursor = connection.cursor() #cursore del database
+                cursor.execute("SELECT anno, mese, giorno, COUNT (DISTINCT ip) AS visitatori FROM get \
+                    GROUP BY anno, mese, giorno")
+                with open(CSV_VISITATORI_FILE, "wb") as csv_file:
+                    csv_writer = csv.writer(csv_file)
+                    csv_writer.writerow([i[0] for i in cursor.description]) #scrive solo intestazioni
+                    csv_writer.writerows(cursor) #scrive il resto del file
+            with open(LOG_FILE, 'a') as log_file:
+                log_file.write(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') + " Ho aggiornato un file csv che mostra i visitatori totali del giorno")
+
+    except Exception, e:
+        print "Non sono riuscito a creare il file CSV: ", sys.exc_info()[0]
+        with open(LOG_FILE, 'a') as log_file:
+            log_file.write(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S') + " Non sono riuscito ad aggiornare un file csv che mostra i visitatori totali del giorno")
+        raise e
 
 
 #@profile
@@ -175,30 +231,14 @@ def start_parser():
     '''
     if not os.path.isfile(LOG_FILE): #questo viene eseguito solamente al primo avvio
         leggi_vecchi_gz()
+        conta_ip_giornalieri_csv()
     else:
-        leggi_piu_recente_gz()
-
-    
-    
-
-    '''with open(log_dir, "r") as access_log_file:
-        requests = []
-        for line in access_log_file:
-            compiled_line = find(pat, line, None)
-            if compiled_line:
-                compiled_line = compiled_line[0] # convert our [("","","")] to ("","","")
-                if ( any(x in compiled_line[2] for x in filters) or (compiled_line[2].endswith('/')) or (('.') not in compiled_line[2]) ):
-                    request_time = apachetime(compiled_line[1])
-                    #request_time_ = time.strptime(compiled_line[1][:-6], '%d/%b/%Y:%H:%M:%S')
-                    if ( not any(black in compiled_line[2] for black in black_folders ) ) and ( start_point <= request_time <= end_point ):
-                        requests.append(compiled_line)
-                    if request_time > end_point:
-                        return requests
-    return requests #list of all access log lines'''
+        leggi_piu_recente_gz() #in realta' non si tratta di un .gz, ma di un documento di testo
+        aggiorna_ip_giornalieri_csv()
 
 def find(pat, text, match_item):
     '''
-    method that parses log lines using regexs
+    metodo che confronta una stringa con una regular expression (regex)
     '''
     match = re.findall(pat, text)
     if match:
@@ -208,7 +248,7 @@ def find(pat, text, match_item):
 
 def checkUrl(url):
     '''
-    method that check if a webpage exists or not
+    metodo che controlla se un url ricercato da un utente esiste veramente
     '''
     p = urlparse(url)
     conn = httplib.HTTPConnection(p.netloc)

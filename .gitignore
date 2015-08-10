@@ -1,3 +1,5 @@
 *.db
 *.1
 *.gz
+*.csv
+public/csv/

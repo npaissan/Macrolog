@@ -6,5 +6,7 @@
   "access_log_location": "/var/log/nginx/access_log",
   "website_name": "://atletica.me",
   "protocol_used": "http",
-  "omit_malicious_bots": true
+  "omit_malicious_bots": true,
+  "web_server": "nginx",
+  "public_html": "/usr/share/nginx/www/mtgfiddle.me/tirocinio/norbert"
 }

@@ -4,14 +4,15 @@ function disegnaCalendario(){
       cellSize = 17; // grandezza celle
 
   var percent = d3.format(".1%"),
-      format = d3.time.format("%Y-%m-%d");
+      format = d3.time.format("%Y-%m-%d")
+      doppiaCifra = d3.format("02d");
 
   var color = d3.scale.quantize()
-      .domain([-.05, .05])
+      .domain([0, 30])
       .range(d3.range(11).map(function(d) { return "q" + d + "-11"; }));
 
   var svg = d3.select("body").selectAll("svg")
-      .data(d3.range(1990, 2011))
+      .data(d3.range(2013, 2016))
     .enter().append("svg")
       .attr("width", width)
       .attr("height", height)
@@ -43,18 +44,22 @@ function disegnaCalendario(){
       .attr("class", "month")
       .attr("d", monthPath);
 
-  d3.csv("dji.csv", function(error, csv) {
+  d3.csv("csv/conteggio_visitatori.csv", function(error, csv) {
     if (error) throw error;
 
     var data = d3.nest()
-      .key(function(d) { return d.Date; })
-      .rollup(function(d) { return (d[0].Close - d[0].Open) / d[0].Open; })
+      .key(function(d) { 
+      	return (d.anno + "-" + d.mese + "-" + doppiaCifra(d.giorno) ); })
+      .rollup(function(d) { return (d[0].visitatori); })
       .map(csv);
 
-    rect.filter(function(d) { return d in data; })
+    rect.filter(function(d) { 
+    	return d in data; })
         .attr("class", function(d) { return "day " + color(data[d]); })
       .select("title")
-        .text(function(d) { return d + ": " + percent(data[d]); });
+        .text(function(d) { 
+        	//console.log(d)
+        	return d + ": " + (data[d]); });
   });
 
   function monthPath(t0) {

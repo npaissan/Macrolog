@@ -49,7 +49,7 @@ function disegnaCalendario(){
 
     var data = d3.nest()
       .key(function(d) { 
-      	return (d.anno + "-" + d.mese + "-" + doppiaCifra(d.giorno) ); })
+      	return (d.anno + "-" + doppiaCifra(d.mese) + "-" + doppiaCifra(d.giorno) ); })
       .rollup(function(d) { return (d[0].visitatori); })
       .map(csv);
 

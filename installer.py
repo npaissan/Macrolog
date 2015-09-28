@@ -19,6 +19,10 @@ try:
 	with open(logrotate_server_file, "r") as logrotate_file_r: #leggo come read e salvo il contenuto in una lista.
 		for linea in logrotate_file_r:
 			contenuto_logrotate.append(linea)
+			if "create" in linea:
+				linea_permessi = "\tcreate 0647 www-data adm \n"
+				del contenuto_logrotate[-1]
+				contenuto_logrotate.append(linea_permessi)
 			if "postrotate" in linea:
 				contenuto_da_scrivere = "		python " + PARSER_FILE + "\n"
 				contenuto_logrotate.append(contenuto_da_scrivere)

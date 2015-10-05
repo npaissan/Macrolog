@@ -1,4 +1,5 @@
 function disegnaCalendario(){
+  var csv = visitatoriJSON;
   var width = 960,
       height = 136,
       cellSize = 17; // grandezza celle
@@ -44,23 +45,21 @@ function disegnaCalendario(){
       .attr("class", "month")
       .attr("d", monthPath);
 
-  d3.csv("csv/conteggio_visitatori.csv", function(error, csv) {
-    if (error) throw error;
+  
+  var data = d3.nest()
+    .key(function(d) { 
+    	return (d.anno + "-" + doppiaCifra(d.mese) + "-" + doppiaCifra(d.giorno) ); })
+    .rollup(function(d) { return (d[0].visitatori); })
+    .map(csv);
 
-    var data = d3.nest()
-      .key(function(d) { 
-      	return (d.anno + "-" + doppiaCifra(d.mese) + "-" + doppiaCifra(d.giorno) ); })
-      .rollup(function(d) { return (d[0].visitatori); })
-      .map(csv);
-
-    rect.filter(function(d) { 
-    	return d in data; })
-        .attr("class", function(d) { return "day " + color(data[d]); })
-      .select("title")
-        .text(function(d) { 
-        	//console.log(d)
-        	return d + ": " + (data[d]); });
-  });
+  rect.filter(function(d) { 
+  	return d in data; })
+      .attr("class", function(d) { return "day " + color(data[d]); })
+    .select("title")
+      .text(function(d) { 
+      	//console.log(d)
+      	return d + ": " + (data[d]); });
+  
 
   function monthPath(t0) {
     var t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),

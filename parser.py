@@ -8,11 +8,11 @@ CURRENT_DIR = os.path.dirname(__file__)
 CONFIG_FILE = os.path.join(CURRENT_DIR, "config.json")
 LOG_FILE = os.path.join(CURRENT_DIR, "macro.log")
 DB_FILE = os.path.join(CURRENT_DIR, "macro.db")
-CSV_VISITATORI_FILE = os.path.abspath(".") + "/public/csv"
+'''CSV_VISITATORI_FILE = os.path.abspath(".") + "/public/csv"
 if not os.path.exists(CSV_VISITATORI_FILE):
     os.makedirs(CSV_VISITATORI_FILE)
 CSV_VISITATORI_FILE = CSV_VISITATORI_FILE + "/conteggio_visitatori.csv"
-print CSV_VISITATORI_FILE
+print CSV_VISITATORI_FILE'''
 '''
 Regex per individuare le linee utili di un access log
 '''
@@ -186,6 +186,7 @@ def conta_ip_giornalieri_csv():
             cursor.execute("SELECT anno, mese, giorno, COUNT (DISTINCT ip) AS visitatori FROM get \
                 GROUP BY anno, mese, giorno")
             with open(CSV_VISITATORI_FILE, "wb") as csv_file:
+                os.chmod(CSV_VISITATORI_FILE,0747)
                 csv_writer = csv.writer(csv_file)
                 csv_writer.writerow([i[0] for i in cursor.description]) #scrive solo intestazioni
                 csv_writer.writerows(cursor) #scrive il resto del file
@@ -209,6 +210,7 @@ def aggiorna_ip_giornalieri_csv():
                 cursor = connection.cursor() #cursore del database
                 cursor.execute("SELECT anno, mese, giorno, COUNT (DISTINCT ip) AS visitatori FROM get \
                     GROUP BY anno, mese, giorno")
+                print CSV_VISITATORI_FILE
                 with open(CSV_VISITATORI_FILE, "wb") as csv_file:
                     csv_writer = csv.writer(csv_file)
                     csv_writer.writerow([i[0] for i in cursor.description]) #scrive solo intestazioni
@@ -231,10 +233,10 @@ def start_parser():
     '''
     if not os.path.isfile(LOG_FILE): #questo viene eseguito solamente al primo avvio
         leggi_vecchi_gz()
-        conta_ip_giornalieri_csv()
+        #conta_ip_giornalieri_csv()
     else:
         leggi_piu_recente_gz() #in realta' non si tratta di un .gz, ma di un documento di testo
-        aggiorna_ip_giornalieri_csv()
+        #aggiorna_ip_giornalieri_csv()
 
 def find(pat, text, match_item):
     '''

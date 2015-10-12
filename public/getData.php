@@ -1,8 +1,20 @@
-<?php 
+<?php
+$graficoRichiesto=$_GET["grafico"];
 require "handle.php";
-$visitatori = Database::ask("SELECT anno, mese, giorno, COUNT (DISTINCT ip) AS visitatori FROM get 
-                    GROUP BY anno, mese, giorno", []);
-$visitatoriJSON = json_encode($visitatori);
 
-print_r($visitatoriJSON);
+if($graficoRichiesto=="calendario"){
+	$visitatori = Database::ask("SELECT anno, mese, giorno, COUNT (DISTINCT ip) AS visitatori FROM get 
+	                    GROUP BY anno, mese, giorno", []);
+	$visitatoriJSON = json_encode($visitatori);
+
+	print_r($visitatoriJSON);
+}
+
+elseif ($graficoRichiesto=="barChart") {
+	$richiestePerPagina = Database::ask("SELECT cartella_pagina, COUNT (cartella_pagina) AS richieste FROM get 
+						GROUP BY (cartella_pagina) ORDER BY richieste DESC LIMIT 20", []);
+	$richiestePerPaginaJSON = json_encode($richiestePerPagina);
+
+	print_r($richiestePerPaginaJSON);
+}
  ?>

@@ -13,7 +13,7 @@
 <body>
 	<script type="text/javascript">
 		var visitatoriJSON;
-		$.get("getData.php", function(response){
+		$.get("getData.php?grafico=calendario", function(response){
 			visitatoriJSON = JSON.parse(response);
 			console.log(visitatoriJSON);
 			disegnaCalendario();

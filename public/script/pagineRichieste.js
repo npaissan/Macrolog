@@ -14,11 +14,12 @@ function disegnaBarChart(){
   var xAxis = d3.svg.axis()
       .scale(x)
       .orient("bottom");
+      
 
   var yAxis = d3.svg.axis()
       .scale(y)
       .orient("left")
-      .tickFormat(formatPercent);
+      //.tickFormat(formatPercent);
 
   var tip = d3.tip()
     .attr('class', 'd3-tip')
@@ -36,23 +37,28 @@ function disegnaBarChart(){
   svg.call(tip);
 
   x.domain(data.map(function(d) { return d.cartella_pagina; }));
-  y.domain([0, d3.max(data, function(d) { return d.richieste; })]);
-  console.log(d3.max(data, function(d) { return d.richieste; })); //TODO controllare rage scala, da 95 e non 5000!
+  y.domain([0, d3.max(data, function(d) { return +d.richieste; })]);
+  console.log(d3.max(data, function(d) { return +d.richieste; })); //TODO controllare rage scala, da 95 e non 5000!
 
   svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
+      .call(xAxis)
+      .selectAll("text")  
+            .style("text-anchor", "start")
+            //.attr("dx", "-.8em")
+            //.attr("dy", ".15em")
+            .attr("transform", "rotate(30)" );
 
   svg.append("g")
       .attr("class", "y axis")
       .call(yAxis)
     .append("text")
-      .attr("transform", "rotate(-90)")
       .attr("y", 6)
-      .attr("dy", ".71em")
-      .style("text-anchor", "end")
-      .text("Frequency");
+      .attr("dy", "-1.29em")
+      .attr("dx", "-4em")
+      .style("text-anchor", "start")
+      .text("Numero visite");
 
   svg.selectAll(".bar")
       .data(data)

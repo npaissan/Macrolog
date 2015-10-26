@@ -17,4 +17,13 @@ elseif ($graficoRichiesto=="barChart") {
 
 	print_r($richiestePerPaginaJSON);
 }
+
+elseif($graficoRichiesto=="story"){
+	$data = Database::ask("SELECT cartella_pagina, COUNT (cartella_pagina) FROM get WHERE refferrer='https://mtgfiddle.me/'
+			GROUP BY cartella_pagina ORDER BY (COUNT (cartella_pagina)) DESC");
+	$dataJSON=json_encode($data);
+
+	print_r($data);
+
+}
  ?>

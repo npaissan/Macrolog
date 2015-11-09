@@ -19,11 +19,31 @@ elseif ($graficoRichiesto=="barChart") {
 }
 
 elseif($graficoRichiesto=="story"){
-	$data = Database::ask("SELECT cartella_pagina, COUNT (cartella_pagina) FROM get WHERE refferrer='https://mtgfiddle.me/'
-			GROUP BY cartella_pagina ORDER BY (COUNT (cartella_pagina)) DESC");
-	$dataJSON=json_encode($data);
+	$file_configurazione=file_get_contents('/home/norbert/macrolog/config.json');
+	$configurazione=json_decode($file_configurazione, true);
+	$nome_sito=$configurazione["protocol_used"] . $configurazione["website_name"];
 
-	print_r($data);
+	$array_finale = array();
+	
+
+	$cartelle_piu_richieste = Database::ask("SELECT cartella_pagina FROM get WHERE cartella_pagina NOT LIKE '%?%' 
+			GROUP BY cartella_pagina ORDER BY COUNT (cartella_pagina) DESC LIMIT 10");
+	foreach ($cartelle_piu_richieste as $cartella ) {
+		$arr_data = array(
+			"refferrer" =>$nome_sito.$cartella["cartella_pagina"]."%"
+		);
+
+		$data = Database::ask("SELECT refferrer AS cartella_partenza, cartella_pagina AS cartella_destinazione, COUNT (cartella_pagina) FROM get WHERE refferrer like :refferrer
+			GROUP BY cartella_pagina ORDER BY (COUNT (cartella_pagina)) DESC", $arr_data);
+
+		array_push($array_finale, $data);
+
+	}
+	
+	
+	$dataJSON=json_encode($array_finale);
+
+	print_r($dataJSON);
 
 }
  ?>

@@ -4,8 +4,8 @@
   "rewrite_rules": [],
   "folder_level": 1,
   "access_log_location": "/var/log/nginx/access_log",
-  "website_name": "://atletica.me",
-  "protocol_used": "http",
+  "website_name": "://mtgfiddle.me",
+  "protocol_used": "https",
   "omit_malicious_bots": true,
   "web_server": "nginx",
   "public_html": "/usr/share/nginx/www/mtgfiddle.me/tirocinio/norbert"

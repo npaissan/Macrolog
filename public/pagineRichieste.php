@@ -12,6 +12,10 @@
 	<script type="text/javascript" src="script/pagineRichieste.js"></script>
 </head>
 <body>
+	<div id="titolo">
+        <h1>PAGINE PIU' RICHIESTE</h1>
+    </div>
+
 	<script type="text/javascript">
 		var data;
 		$.get("getData.php?grafico=barChart", function(response){

@@ -55,12 +55,7 @@ class Database
 
     private static function getServerPDO()
         {
-        $dbHost = DB_HOST;
-        $dbName = DB_NAME;
-        $dbUser = DB_USER;
-        $dbPass = DB_PASS;
-
-        return new PDO("sqlite:../macro.db");
+        return new PDO("sqlite:macro.db");
         }
 
     private static function handleError($exception)
@@ -68,7 +63,7 @@ class Database
         if (true)
             echo $exception->getMessage();
 
-        quit("500 Internal Server Error");
+        //quit("500 Internal Server Error");
         }
     }
 

@@ -7,7 +7,7 @@ Costanti dei percorsi assoluti dei file, mi permette di eseguire lo script da tu
 CURRENT_DIR = os.path.dirname(__file__) 
 CONFIG_FILE = os.path.join(CURRENT_DIR, "config.json")
 LOG_FILE = os.path.join(CURRENT_DIR, "macro.log")
-DB_FILE = os.path.join(CURRENT_DIR, "macro.db")
+DB_FILE = os.path.join(CURRENT_DIR, "public", "macro.db")
 '''CSV_VISITATORI_FILE = os.path.abspath(".") + "/public/csv"
 if not os.path.exists(CSV_VISITATORI_FILE):
     os.makedirs(CSV_VISITATORI_FILE)

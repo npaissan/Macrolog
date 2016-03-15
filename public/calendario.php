@@ -4,16 +4,28 @@
 
 <html>
     <head>
-    	<title>Calendario</title>
+    	<title>Nuovo Calendario</title>
+
+        <link rel="stylesheet" type="text/css" href="style/calendario.css">
         <?php require_once("header.php") ?>
     </head>
     <body>
 
-        <div id="titolo">
-            <h1>CALENDARIO</h1>
+        
+
+        <div class="jumbotron">
+            <div class="container" id="titolo">
+                <h2><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span> CALENDARIO </h2>
+                <p id="spiegazione">« Il grafico in questa pagina mostra le visite giornaliere ottenute dal sito. 
+                    In pochi istanti è possibile capire in quali periodi dell’anno oppure del mese sono state ottenute le maggiori visite. 
+                    Con il passaggio del mouse sul singolo giorno è invece possibile visualizzare il numero esatto delle visite giornaliere. »
+                </p>            
+            </div>
         </div>
+            <hr>
 
         <!--<div id="legenda">-->
+
     	 <table id="legenda" border="1px">
                 <thead>
                     <tr>
@@ -89,6 +101,7 @@
                 </tbody>
             </table>
        <!-- </div>-->
+   
     	<script type="text/javascript">
     		var visitatoriJSON;
     		$.get("getData.php?grafico=calendario", function(response){

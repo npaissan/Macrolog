@@ -1,7 +1,7 @@
 function disegnaCalendario(){
   var csv = visitatoriJSON;
-  var width = 960,
-      height = 136,
+  var width = 1000, //960
+      height = 195, //136
       cellSize = 17; // grandezza celle
 
   var percent = d3.format(".1%"),
@@ -13,7 +13,7 @@ function disegnaCalendario(){
       .range(d3.range(11).map(function(d) { return "q" + d + "-11"; }));
 
   var svg = d3.select("body").selectAll("svg")
-      .data(d3.range(2013, 2016))
+      .data(d3.range(2014, 2017))
     .enter().append("svg")
       .attr("width", width)
       .attr("height", height)
@@ -25,6 +25,57 @@ function disegnaCalendario(){
       .attr("transform", "translate(-6," + cellSize * 3.5 + ")rotate(-90)")
       .style("text-anchor", "middle")
       .text(function(d) { return d; });
+
+/*SICURAMENTE DA RIVEDERE*/
+
+
+  svg.append("text")
+      .attr("transform", "translate(+30," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Gennaio");
+
+  svg.append("text")
+      .attr("transform", "translate(+110," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Febbraio");
+
+  svg.append("text")
+      .attr("transform", "translate(+190," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Marzo");
+
+  svg.append("text")
+      .attr("transform", "translate(+270," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Aprile");
+
+  svg.append("text")
+      .attr("transform", "translate(+350," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Maggio");
+
+  svg.append("text")
+      .attr("transform", "translate(+430," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Giugno");
+
+  svg.append("text")
+      .attr("transform", "translate(+500," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Luglio");
+
+  svg.append("text")
+      .attr("transform", "translate(+560," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Agosto");
+
+  svg.append("text")
+      .attr("transform", "translate(+640," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Settembre");
+
+  svg.append("text")
+      .attr("transform", "translate(+720," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Ottobre");
+
+  svg.append("text")
+      .attr("transform", "translate(+790," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Novembre");
+
+  svg.append("text")
+      .attr("transform", "translate(+865," + cellSize * -0.1 + ")rotate(-45)")
+      .text("Dicembre");
 
   var rect = svg.selectAll(".day")
       .data(function(d) { return d3.time.days(new Date(d, 0, 1), new Date(d + 1, 0, 1)); })
@@ -58,7 +109,7 @@ function disegnaCalendario(){
     .select("title")
       .text(function(d) { 
       	//console.log(d)
-      	return d + ": " + (data[d]); });
+      	return "In data " + "'" + d + "' " + "numero visite: " + (data[d]); });
   
 
   function monthPath(t0) {

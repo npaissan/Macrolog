@@ -1,0 +1,91 @@
+.padd20-li-div{
+	cursor: pointer;
+}
+
+.padd20-li-div > li > div{
+	padding: 20px;
+}
+
+.open-li > ul{
+	background-color: rgba(0,0,0,.1);
+}
+
+.to-page{
+	text-align: center;
+	padding: 20px;
+}
+
+.to-page .num{
+	padding: 5px;
+	font-weight: bolder;
+	font-size: 150%;
+}
+
+.to-page .num span{
+	font-size: 70%;
+	font-weight: lighter;
+	opacity: .3;
+	margin-left: 2px;
+}
+
+.to-page .dest{
+	opacity: .8;
+}
+
+
+/* stile grafico storyGraph */
+#newBody {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  background-color: #fff;
+  width: 960px;
+  height: 700px;
+  margin-top: 10px;
+}
+
+#main {
+  float: left;
+  width: 750px;
+}
+
+#sidebar {
+  float: right;
+  width: 100px;
+}
+
+#sequence {
+  width: 600px;
+  height: 70px;
+}
+
+#legend {
+  padding: 10px 0 0 3px;
+}
+
+#sequence text, #legend text {
+  font-weight: 600;
+  fill: #fff;
+}
+
+#chart {
+  position: relative;
+}
+
+#chart path {
+  stroke: #fff;
+}
+
+#explanation {
+  position: absolute;
+  top: 260px;
+  left: 305px;
+  width: 140px;
+  text-align: center;
+  color: #666;
+  z-index: -1;
+}
+
+#percentage {
+  font-size: 2.5em;
+}

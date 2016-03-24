@@ -29,7 +29,7 @@
           <p><a class="btn btn-success" href="/pagineRichieste.php" role="button">Apri &raquo;</a></p>
        </div>
         <div class="col-md-4 col-xs-12">
-          <h2>Story</h2>
+          <h2>Storia delle scelte</h2>
           <p>Mostra con quale percentuale gli utenti si spostano dalla pagina visitata ad un'altra</p>
           <!--<p>Mostra le decisioni prese dagli utenti</p>-->
           <p><a class="btn btn-success" href="/story.php" role="button">Apri &raquo;</a></p>

@@ -15,4 +15,4 @@ all:
 	env/bin/python installer.py
 	@echo "eseguo il software"
 	env/bin/python parser.py
-
+#linkare cartella public nel public html

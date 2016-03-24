@@ -11,7 +11,9 @@
 				<h2><span class="glyphicon glyphicon-star-empty" aria-hidden="true"></span> PAGINE PIU' RICHIESTE</h2>
 				<p id="titolo">« Il grafico sottostante mostra in ordine decrescente le 20 pagine che hanno ottenuto le maggiori visite.
 								È possibile selezionare una delle colonne per farla sparire, così 
-								l’intero grafico si ridimensiona in funzione delle colonne rimaste. »
+								l’intero grafico si ridimensiona in funzione delle colonne rimaste. 
+								In un secondo momento cliccando sul nome della pagina è possibile far ricomparire la colonna per permettere 
+								visioni differenti. »
 				</p>		    
 			</div>
 		</div>

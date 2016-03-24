@@ -3,34 +3,138 @@
 	<title>Story</title>
 	<link rel="stylesheet" type="text/css" href="http://developers.atletica.me/css/creativeC.css">
 	<link rel="stylesheet" type="text/css" href="/style/story.css">
+	<script type="text/javascript" src="/script/story.js"></script>
+
 	<?php require_once("header.php") ?>
 
-	<script type="text/javascript" src="/script/story.js"></script>
+	
+
+<!--parte nuova-->
+	<!--<script type="text/javascript" src="/script/story.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans:400,600">
+    <link rel="stylesheet" type="text/css" href="http://bl.ocks.org/kerryrodden/raw/7090426/8fce22c9e21711c757ee8a0df7dba5a42dea0d9c/sequences.css">
+    <link rel="stylesheet" type="text/css" href="http://developers.atletica.me/css/creativeC.css">
+    <link rel="stylesheet" type="text/css" href="/style/story.css">-->
+    
+<!--fine parte nuova-->
 </head>
 <body>
 
-<div class="limitatore">
-	<div class="padd20 center">
-		<div class="no-font split split50">
-			<div class="split split50 f16 padd10 Bred">
-				GRAFICO
-			</div>
-			<div class="split split50 f16 padd10">
-				NO-GRAFICO
-			</div>
-		</div>
-	</div>
+<h1 id="titoloTab">Storia delle scelte</h1>
+    <hr />
 
-	<div class="padd20">
-		<div class="padd10 op7">
-			Clicca per ridurre il numero di pagine
-		</div>
-		<ul class="f16 border-1 padd20-li-div" id="link_pages">
-			
-		</ul>
-	</div>
+        <div class="tab-panel">
+            <ul class="tab-link">
+                <li class="active"><a href="#FirstTab">Story</a></li>
+                <li><a href="#SecondTab">storyGraph</a></li>
+            </ul>
 
-</div>
+            <div class="content-area">
+                <div id="FirstTab" class="active">
+
+                	<div class="jumbotron">
+				        <div class="container" id="titolo">
+				            <h2><span class="glyphicon glyphicon-indent-left" aria-hidden="true"></span> Story </h2>
+				            <p id="spiegazione">« In questa sezione è possibile osservare le scelte effettuate dagli utenti, ovvero
+				            						con quali probabilità si sono spostati dalla pagina che stavano visitando ad un'altra. Questo grafico
+				            						ne permette una rapida visione. »
+				            </p>            
+				        </div>
+				    </div>
+
+                    <div class="limitatore">
+	
+	
+
+						<!-- <div class="padd20 center">
+							<div class="no-font split split50">
+								<div class="split split50 f16 padd10 Bred">
+									GRAFICO
+								</div>
+								<div class="split split50 f16 padd10">
+									<a href="http://localhost/storyGraph.php">storyGraph<span></span></a>
+								</div>
+							</div>
+						</div> --> 
+
+						<div class="padd20">
+							<div class="padd10 op7">
+								Clicca per ridurre il numero di pagine
+							</div>
+							<ul class="f16 border-1 padd20-li-div" id="link_pages">
+								
+							</ul>
+						</div>
+
+					</div>
+                </div>
+
+                <div id="SecondTab" class="inactive">
+
+                	<script type="text/javascript">
+				      var data;
+				      $.get("getData.php?grafico=story", function(response){
+				        data = JSON.parse(response);
+				        console.log(data);
+				        preparaDati();
+				      })
+				    </script>
+
+                   <div class="jumbotron">
+				        <div class="container" id="titolo">
+				            <h2><span class="glyphicon glyphicon-indent-left" aria-hidden="true"></span> StoryGraph </h2>
+				            <p id="spiegazione">« Rende sempre le scelte fatte dagli utenti, ma grazie alla sua struttura lo fa 
+				            					in una maniera più rapida ed intuitiva, infatti con il passaggio del mouse si crea il percorso effettuato
+				            					e la sua percentuale. »
+				            </p>            
+				        </div>
+				    </div>
+            <hr>
+
+				    <div id="main">
+				      <div id="sequence"></div>
+				      <div id="chart" style="height:500px;width:500px;">
+				        <div id="explanation" style="visibility: hidden;">
+				          <span id="percentage"></span><br/>
+				          of visits begin with this sequence of pages
+				        </div>
+				      </div>
+				    </div>
+				    
+				    <script type="text/javascript">
+				      // Hack to make this example display correctly in an iframe on bl.ocks.org
+				      d3.select(self.frameElement).style("height", "700px");
+				  </script> 
+                </div>
+
+            </div>
+        </div>
+
+
+
+
+<script type="text/javascript">
+	$(document).ready(function () {
+   $('.tab-panel .tab-link a').on('click', function (e) {
+        var currentAttrValue = jQuery(this).attr('href');
+
+        // Show/Hide Tabs
+        //Fade effect
+        //   $('.tab-panel ' + currentAttrValue).fadeIn(1000).siblings().hide();
+        //Sliding effect
+        $('.tab-panel ' + currentAttrValue).slideDown(400).siblings().slideUp(400);
+
+        //Sliding up-down effect
+       // $('.tab-panel ' + currentAttrValue).siblings().slideUp(400);
+        // $('.tab-panel ' + currentAttrValue).delay(400).slideDown(400);
+
+        // Change/remove current tab to active
+        $(this).parent('li').addClass('active').siblings().removeClass('active');
+
+        e.preventDefault();
+    });
+});
+</script>
 
 <script type="text/javascript">
 var storyJSON;
@@ -49,7 +153,7 @@ var tmpl_to_page = 	'<li class="split to-page" style="width: :--%; background: :
 					'	<div class="dest">:TO_PAGE </div>'+
 					'</li>';
 
-var bar_to_page = '<div class="split paddTB5" style="width: :RATE%; background: :COLOR" ></div>'
+var bar_to_page = '<div class="split paddTB5 cool-bar" data-perc=":RATE%" style="width: :RATE%; background: :COLOR" ></div>'
 
 $.get("getData.php?grafico=story", function(response){
 
@@ -73,7 +177,7 @@ $.get("getData.php?grafico=story", function(response){
 	  		var occorrenze = link.occorrenze;
 	  		var rate = (occorrenze/total_occorrenze*100).toFixed(1);
 	  		str_to_pages += tmpl_to_page.replace(":TO_PAGE", to_page).replace(":RATE", rate);
-	  		str_bar      += bar_to_page.replace(":RATE", rate).replace(":COLOR", color_array[i]);
+	  		str_bar      += bar_to_page.replace(/:RATE/g, rate).replace(":COLOR", color_array[i]);
 	  	});
 
 	  	str_from_page += tmpl_page.replace(":ADD_ROW", str_to_pages).replace(":FROM_PAGE", from_page).replace(":BAR_PAGE", str_bar);
@@ -83,9 +187,13 @@ $.get("getData.php?grafico=story", function(response){
 	$("#link_pages").html( str_from_page );
 
 	$("li.open-li").on('click', function(){
-		var $dropdown = $(this);
-		$dropdown.toggleClass("dropdown");
+
+		var dropul = $(this).children('ul');
+		$(dropul).slideToggle('fast');
+		
 	});
+
+
 });
 </script>
 

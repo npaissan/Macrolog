@@ -4,6 +4,8 @@
 
 .padd20-li-div > li > div{
 	padding: 20px;
+  font-family: verdana;
+  font-style: italic;
 }
 
 .open-li > ul{
@@ -32,21 +34,121 @@
 	opacity: .8;
 }
 
+.cool-bar{
+  position: relative;
+}
+
+.cool-bar::after{
+  margin-top: 4px;
+  opacity: 0;
+  content: attr(data-perc);
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  padding: 2px;
+  width: 50px;
+  margin-left: -25px;
+  text-align: center;
+  background-color: rgb(60,60,60);
+  color: white;
+  font-size:    13px;
+  line-height:  15px;
+  border-radius: 3px;
+
+  -webkit-transition: .3s margin, .5s opacity;
+}
+
+.cool-bar:hover::after{
+  margin-top: 0;
+  opacity: 1;
+}
+
+a{text-decoration:none;}
+
+/*----------tap panel style------*/
+ .tab-panel {
+            width: 100%;
+            display: inline-block;
+        }
+
+        .tab-link:after {
+            display: block;
+            padding-top: 20px;
+            content: '';
+        }
+
+        .tab-link li {
+            margin: 0px 5px;
+            float: left;
+            list-style: none;
+        }
+
+        .tab-link a {
+            padding: 8px 15px;
+            display: inline-block;
+            border-radius: 10px 3px 0px 0px;
+            background: #8dc8f5;
+            font-weight: bold;
+            color: #4c4c4c;
+        }
+
+            .tab-link a:hover {
+                background: #b7c7e5;
+                text-decoration: none;
+            }
+
+        li.active a, li.active a:hover {
+            background: #ccc;
+            color: #0094ff;
+            text-decoration:none;
+        }
+
+        .content-area {
+            padding: 15px;
+            border-radius: 3px;
+            box-shadow: -1px 1px 1px rgba(0,0,0,0.15);
+            background: #fff;
+            border: 1px solid #ccc;
+        }
+
+        .inactive{
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
 
 /* stile grafico storyGraph */
-#newBody {
+
+body {
   font-family: 'Open Sans', sans-serif;
   font-size: 12px;
   font-weight: 400;
-  background-color: #fff;
-  width: 960px;
-  height: 700px;
-  margin-top: 10px;
 }
 
+#spiegazione{
+  font-family: Verdana, sans-serif;
+  text-align: center;
+  font-size: 16px;
+
+}
+
+#titolo{
+  font-family: Verdana, sans-serif;
+  text-align: center;
+  font-size: 16px;
+}
+
+#main_2 {
+  /*background-color: #e3f3f6;*/
+  background-color: rgba(0,0,0,.1);
+}
+
+
+
 #main {
-  float: left;
-  width: 750px;
+  /*background-color: #e3f3f6;*/
 }
 
 #sidebar {
@@ -57,6 +159,7 @@
 #sequence {
   width: 600px;
   height: 70px;
+  margin: 0 auto;
 }
 
 #legend {
@@ -64,12 +167,15 @@
 }
 
 #sequence text, #legend text {
-  font-weight: 600;
+  /*font-weight: 600;*/
   fill: #fff;
+  font-style: italic;
+  font-family: verdana;
 }
 
 #chart {
   position: relative;
+  margin: 0 auto;
 }
 
 #chart path {
@@ -78,14 +184,22 @@
 
 #explanation {
   position: absolute;
-  top: 260px;
-  left: 305px;
+  top: 125px;
+  left: 132px;
   width: 140px;
   text-align: center;
   color: #666;
-  z-index: -1;
+  z-index: 0;
 }
 
 #percentage {
   font-size: 2.5em;
+}
+
+#titoloTab{
+  font-family: Verdana, sans-serif;
+  text-align: center;
+  /*font-size: 25px;
+  font-style: bold;*/
+
 }

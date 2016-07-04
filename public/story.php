@@ -27,6 +27,7 @@
             <ul class="tab-link">
                 <li class="active"><a href="#FirstTab">Story</a></li>
                 <li><a href="#SecondTab">storyGraph</a></li>
+                <li><a href="#ThirdTab">firstPage</a></li>
             </ul>
 
             <div class="content-area">
@@ -71,15 +72,6 @@
 
                 <div id="SecondTab" class="inactive">
 
-                	<script type="text/javascript">
-				      var data;
-				      $.get("getData.php?grafico=story", function(response){
-				        data = JSON.parse(response);
-				        console.log(data);
-				        preparaDati();
-				      })
-				    </script>
-
                    <div class="jumbotron">
 				        <div class="container" id="titolo">
 				            <h2><span class="glyphicon glyphicon-indent-left" aria-hidden="true"></span> StoryGraph </h2>
@@ -107,6 +99,43 @@
 				  </script> 
                 </div>
 
+                <div id="ThirdTab" class="inactive">
+
+                	<div class="jumbotron">
+				        <div class="container" id="titolo">
+				            <h2><span class="glyphicon glyphicon-indent-left" aria-hidden="true"></span> FirstPage </h2>
+				            <p id="spiegazione">« Qui possiamo osservare le prime pagine che un utente visita sul sito. Questo è
+				            	reso possibile grazie all'utlizzo del referrer.»
+				            </p>            
+				        </div>
+				    </div>
+
+                    <div class="limitatore">
+	
+	
+
+						<!-- <div class="padd20 center">
+							<div class="no-font split split50">
+								<div class="split split50 f16 padd10 Bred">
+									GRAFICO
+								</div>
+								<div class="split split50 f16 padd10">
+									<a href="http://localhost/storyGraph.php">storyGraph<span></span></a>
+								</div>
+							</div>
+						</div> --> 
+
+						<div class="padd20">
+							<div class="padd10 op7">
+								Clicca per ridurre il numero di pagine
+							</div>
+							<ul class="f16 border-1 padd20-li-div" id="link_top_pages">
+								
+							</ul>
+						</div>
+
+					</div>
+                </div>
             </div>
         </div>
 
@@ -138,6 +167,7 @@
 
 <script type="text/javascript">
 var storyJSON;
+var data;
 var color_array = ["#0F26D8", "#0F2", "#FF1744", "#1DE9B6", "violet"];
 
 var tmpl_page = '<li class="open-li">'+
@@ -157,7 +187,22 @@ var bar_to_page = '<div class="split paddTB5 cool-bar" data-perc=":RATE%" style=
 
 $.get("getData.php?grafico=story", function(response){
 
-	storyJSON = JSON.parse(response);
+	data = JSON.parse(response);
+	console.log(data);
+	preparaDati();
+	disegnaStory( data );
+
+});
+
+$.get("getData.php?grafico=firstPage", function(response){
+
+	data = JSON.parse(response);
+	console.log(data);
+	disegnaFirstPage( data );
+
+});
+
+function disegnaStory( storyJSON ){
 	var str_from_page = "";
 
 	$.each(storyJSON, function( i, pages ) {
@@ -173,11 +218,12 @@ $.get("getData.php?grafico=story", function(response){
 	  	});
 
 	  	$.each(pages, function( i, link ) {
+	  		var num = i % color_array.length;
 	  		var to_page = link.cartella_destinazione;
 	  		var occorrenze = link.occorrenze;
 	  		var rate = (occorrenze/total_occorrenze*100).toFixed(1);
 	  		str_to_pages += tmpl_to_page.replace(":TO_PAGE", to_page).replace(":RATE", rate);
-	  		str_bar      += bar_to_page.replace(/:RATE/g, rate).replace(":COLOR", color_array[i]);
+	  		str_bar      += bar_to_page.replace(/:RATE/g, rate).replace(":COLOR", color_array[num]);
 	  	});
 
 	  	str_from_page += tmpl_page.replace(":ADD_ROW", str_to_pages).replace(":FROM_PAGE", from_page).replace(":BAR_PAGE", str_bar);
@@ -192,9 +238,31 @@ $.get("getData.php?grafico=story", function(response){
 		$(dropul).slideToggle('fast');
 		
 	});
+}
 
+function disegnaFirstPage( pages ){
 
-});
+	var str_to_pages = "";
+	var str_bar = "";
+
+	var total_occorrenze = 0;
+  	$.each(pages, function( i, page ) {
+  		total_occorrenze += parseInt(page.occorrenze);
+  	});
+
+	$.each(pages, function( i, page ){
+		var num = i % color_array.length;
+		var to_page = page.cartella_pagina;
+  		var occorrenze = page.occorrenze;
+  		var rate = (occorrenze/total_occorrenze*100).toFixed(1);
+  		str_to_pages += tmpl_to_page.replace(":TO_PAGE", to_page).replace(":RATE", rate);
+  		str_bar      += bar_to_page.replace(/:RATE/g, rate).replace(":COLOR", color_array[num]);
+	});
+
+	str_from_page = tmpl_page.replace(":ADD_ROW", str_to_pages).replace(":FROM_PAGE", "Percentuale di arrivi").replace(":BAR_PAGE", str_bar);
+	$("#link_top_pages").html( str_from_page );
+}
+
 </script>
 
 </body>

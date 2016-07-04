@@ -3,6 +3,10 @@ require "handle.php";
 
 $graficoRichiesto=$_GET["grafico"];
 
+$file_configurazione=file_get_contents('C:\Users\Moto\Documents\GitHub\Macrolog\config.json'); //TODO, Cambiare con quella del server
+$configurazione=json_decode($file_configurazione, true);
+$nome_sito=$configurazione["protocol_used"] . $configurazione["website_name"];
+
 if($graficoRichiesto=="calendario"){
 	$visitatori = Database::ask("SELECT anno, mese, giorno, COUNT (DISTINCT ip) AS visitatori FROM get 
 	                    GROUP BY anno, mese, giorno", []);
@@ -20,37 +24,52 @@ elseif ($graficoRichiesto=="barChart") {
 }
 
 elseif($graficoRichiesto=="story"){
-	$file_configurazione=file_get_contents('C:\Users\Moto\Documents\GitHub\Macrolog\config.json'); //TODO, Cambiare con quella del server
-	$configurazione=json_decode($file_configurazione, true);
-	$nome_sito=$configurazione["protocol_used"] . $configurazione["website_name"];
-
 	$array_finale = array();
 
-	$cartelle_piu_richieste = Database::ask("SELECT cartella_pagina FROM get WHERE cartella_pagina NOT LIKE '%?%' 
-			GROUP BY cartella_pagina ORDER BY COUNT (cartella_pagina) DESC LIMIT 10", []);
-	foreach ($cartelle_piu_richieste as $cartella ) {
-		$url = $nome_sito.$cartella["cartella_pagina"];
-		if(substr($url,-1) != "/"){
-			$url = $url."/";
+	$data = Database::ask("SELECT first_page, GROUP_CONCAT(cartella_pagina || '-' || conta) as cartelle_pagina,  sum(conta) from (
+	select '/' || substr(replace(refferrer, 'http://atletica.me/', ''), 0, instr(replace(refferrer, 'http://atletica.me/', ''), '/') +1) as first_page, cartella_pagina, count(*) as conta
+	from get as g1
+	where refferrer like 'http://atletica.me%' and cartella_pagina not like '%.%' and cartella_pagina not like '%-%'
+	 and first_page not like '%.%' and first_page not like '%-%'
+	group by substr(replace(refferrer, 'http://atletica.me', ''), 0, instr(replace(refferrer, 'http://atletica.me/', ''), '/') +1), cartella_pagina
+	order by count(*) desc 
+	)
+	group by first_page
+	order by sum(conta) desc
+	limit 0,10", []);
+
+	$i = 0;
+	foreach ($data as $cartella ) {
+		$arr = explode( "," , $cartella["cartelle_pagina"] );
+		$j = 0;
+		$array_finale[$i] = array();
+		foreach ($arr as $obj) {
+			$po = explode( "-", $obj );
+			$array_finale[$i][$j]["cartella_partenza"] = $cartella["first_page"];
+			$array_finale[$i][$j]["cartella_destinazione"] = $po[0];
+			$array_finale[$i][$j]["occorrenze"] = $po[1];
+			$j++;
+			if( $j > 9 )
+				break;
 		}
-		$arr_data = array(
-			"refferrer" =>$url,
-			"not_slash_refferrer" =>$url."%/%",
-			"dot_refferrer" =>$url."%.%"
-		);
-
-		$data = Database::ask("SELECT :refferrer AS cartella_partenza, cartella_pagina AS cartella_destinazione, count(cartella_pagina) as occorrenze
-				FROM get WHERE cartella_pagina NOT LIKE '%:%'
-				AND (refferrer = :refferrer OR refferrer LIKE :dot_refferrer) AND refferrer NOT LIKE :not_slash_refferrer
-				group by cartella_pagina 
-				ORDER BY count(cartella_pagina) desc", $arr_data);
-
-		array_push($array_finale, $data);
-
+		$i++;
 	}
 	
 	$dataJSON=json_encode($array_finale);
 	echo $dataJSON;
 
+}
+elseif ($graficoRichiesto == "firstPage") {
+	$arr_data = array(
+		'site_name' => $nome_sito.'%'
+	);
+	$query = "	SELECT cartella_pagina, count(*) as occorrenze
+				FROM get 
+				WHERE refferrer NOT LIKE :site_name 
+				GROUP BY cartella_pagina 
+				ORDER BY count(*) DESC
+				LIMIT 0,10";
+	$data = Database::ask( $query, $arr_data );
+	echo json_encode($data);
 }
 ?>

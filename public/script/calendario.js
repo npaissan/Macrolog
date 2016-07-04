@@ -9,7 +9,7 @@ function disegnaCalendario(){
       doppiaCifra = d3.format("02d");
 
   var color = d3.scale.quantize()
-      .domain([0, 30])
+      .domain([0, 1000])
       .range(d3.range(11).map(function(d) { return "q" + d + "-11"; }));
 
   var svg = d3.select("body").selectAll("svg")
